@@ -9,7 +9,7 @@ Un seul contexte : **Gestion des tâches**. Un contexte « Notifications » ou �
 |---|---|---|
 | Agrégat (racine) | `Task` | Garantit les invariants : titre valide, terminer une seule fois |
 | Objet-valeur | `Priority` | `basse`, `moyenne`, `élevée` ; immuable |
-| Objet-valeur | `TaskStatus` | `à faire`, `terminée` ; immuable |
+| Objet-valeur | `TaskStatus` | `todo`, `done` ; immuable |
 | Port (interface) | `TaskRepository` | Accès aux tâches sans connaître le stockage |
 | Service applicatif | `TaskService` | Orchestre les cas d'usage |
 | Événement | `TaskCompleted` | Émis quand une tâche est terminée |
@@ -31,14 +31,14 @@ classDiagram
     }
     class Priority {
         <<Objet-valeur>>
-        BASSE
-        MOYENNE
-        ELEVEE
+        LOW
+        MEDIUM
+        HIGH
     }
     class TaskStatus {
         <<Objet-valeur>>
-        A_FAIRE
-        TERMINEE
+        TODO
+        DONE
     }
     class TaskCompleted {
         <<Événement>>
@@ -47,7 +47,6 @@ classDiagram
     }
     class TaskRepository {
         <<Port / interface>>
-        +next_id()
         +add(task)
         +get(task_id)
         +list_all()
@@ -58,16 +57,16 @@ classDiagram
     }
     class TaskService {
         <<Service applicatif>>
-        +add_task()
-        +list_tasks(status)
-        +update_task()
-        +complete_task()
-        +delete_task()
+        +create()
+        +list(status)
+        +update()
+        +complete()
+        +remove()
     }
 
     Task --> Priority
     Task --> TaskStatus
-    Task ..> TaskCompleted : émet
+    Task ..> TaskCompleted : trace optionnelle
     TaskRepository ..> Task : persiste
     InMemoryTaskRepository ..|> TaskRepository : implémente
     TaskService --> TaskRepository : utilise
