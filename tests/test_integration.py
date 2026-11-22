@@ -11,10 +11,10 @@ def test_parcours_complet(client):
     assert any(t["id"] == tache_id for t in reponse.json())
 
     # 3. Terminer la tâche
-    reponse = client.post(f"/tasks/{tache_id}/complete")
+    reponse =client.patch(f"/tasks/{tache_id}/done")
     assert reponse.status_code == 200
     assert reponse.json()["status"] == "done"
 
     # 4. Terminer une seconde fois : conflit
-    reponse = client.post(f"/tasks/{tache_id}/complete")
+    reponse = client.patch(f"/tasks/{tache_id}/done")
     assert reponse.status_code == 409

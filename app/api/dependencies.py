@@ -1,5 +1,5 @@
 from app.application.task_service import TaskService
-from app.infrastructure.in_memory_task_repository import InMemoryTaskRepository
+from app.infrastructure.in_memory_repository import InMemoryTaskRepository
 
 # Une seule instance, partagée par toutes les routes
 _repository = InMemoryTaskRepository()
