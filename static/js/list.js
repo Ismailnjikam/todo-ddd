@@ -24,7 +24,8 @@ const els = {
 };
 
 /* ---------- État de l'application ---------- */
-const state = { tasks: [], filter: "all", search: "", taskToDelete: null };
+// tasks = liste affichée (déjà filtrée par l'API) ; allTasks = toutes les tâches (pour les statistiques)
+const state = { tasks: [], allTasks: [], filter: "all", search: "", taskToDelete: null, requestId: 0 };
 
 /* ---------- Adaptation des données de l'API ----------
    Contrat (REPARTITION.md) : Task = id, title, description, priority, status, created_at
@@ -62,7 +63,8 @@ async function apiRequest(path, options = {}) {
   return response.status === 204 ? null : response.json().catch(() => null);
 }
 
-const fetchTasks = () => apiRequest("/tasks");
+// US-07 : le filtre est appliqué par l'API → GET /tasks?status=todo|done
+const fetchTasks = (status) => apiRequest(status ? `/tasks?status=${status}` : "/tasks");
 const markTaskDone = (id) => apiRequest(`/tasks/${id}/done`, { method: "PATCH" });
 const removeTask = (id) => apiRequest(`/tasks/${id}`, { method: "DELETE" });
 
@@ -104,20 +106,17 @@ const hideState = () => { els.state.hidden = true; };
 
 /* ---------- Statistiques ---------- */
 function updateStats() {
-  const done = state.tasks.filter((t) => t.status === "done").length;
-  els.statTotal.textContent = state.tasks.length;
+  const done = state.allTasks.filter((t) => t.status === "done").length;
+  els.statTotal.textContent = state.allTasks.length;
   els.statDone.textContent = done;
-  els.statTodo.textContent = state.tasks.length - done;
+  els.statTodo.textContent = state.allTasks.length - done;
 }
 
-/* ---------- Filtrage + recherche ---------- */
+/* ---------- Recherche (le filtre de statut est fait par l'API) ---------- */
 function getVisibleTasks() {
   const q = state.search.trim().toLowerCase();
-  return state.tasks.filter((t) => {
-    const matchFilter = state.filter === "all" || t.status === state.filter;
-    const matchSearch = !q || t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q);
-    return matchFilter && matchSearch;
-  });
+  if (!q) return state.tasks;
+  return state.tasks.filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
 }
 
 /* ---------- Création d'une carte ---------- */
@@ -184,7 +183,7 @@ function createTaskCard(task) {
 /* ---------- Rendu principal ---------- */
 function render() {
   updateStats();
-  if (state.tasks.length === 0) {
+  if (state.allTasks.length === 0) {
     return showState({ icon: "📝", title: "Aucune tâche pour ce filtre", text: "Créez votre première tâche.", newTask: true });
   }
   const visible = getVisibleTasks();
@@ -196,15 +195,24 @@ function render() {
 }
 
 /* ---------- Chargement ---------- */
-async function loadTasks() {
-  showState({ loading: true, title: "Chargement des tâches…" });
+const toTasks = (data) => (Array.isArray(data) ? data : data?.tasks ?? data?.items ?? []).map(normalizeTask);
+
+// silent = true : pas d'écran de chargement (après terminer / supprimer)
+async function loadTasks({ silent = false } = {}) {
+  const myRequest = ++state.requestId;          // ignore les réponses périmées (clics rapides sur les filtres)
+  if (!silent) showState({ loading: true, title: "Chargement des tâches…" });
   try {
-    const data = await fetchTasks();
-    const items = Array.isArray(data) ? data : data?.tasks ?? data?.items ?? [];
-    state.tasks = items.map(normalizeTask);
+    const status = state.filter === "all" ? null : state.filter;
+    // Liste filtrée par l'API ; si un filtre est actif, on charge aussi toutes les tâches pour les statistiques
+    const [filtered, all] = await Promise.all([fetchTasks(status), status ? fetchTasks(null) : null]);
+    if (myRequest !== state.requestId) return;
+    state.tasks = toTasks(filtered);
+    state.allTasks = all ? toTasks(all) : state.tasks;
     render();
   } catch (err) {
+    if (myRequest !== state.requestId) return;
     state.tasks = [];
+    state.allTasks = [];
     updateStats();
     showState({ icon: "⚠️", title: "Connexion impossible", text: "Impossible de joindre l'API. Vérifiez que le serveur FastAPI est lancé.", retry: true });
   }
@@ -215,12 +223,11 @@ async function handleDone(task, button) {
   button.disabled = true;
   try {
     await markTaskDone(task.id);
-    task.status = "done";
-    render();
+    await loadTasks({ silent: true });
     toast("Tâche terminée.", "success");
   } catch (err) {
-    if (err.status === 409) { task.status = "done"; render(); toast("La tâche est déjà terminée", "info"); }
-    else if (err.status === 404) { toast("Tâche introuvable : la liste va être actualisée.", "error"); loadTasks(); }
+    if (err.status === 409) { await loadTasks({ silent: true }); toast("La tâche est déjà terminée", "info"); }
+    else if (err.status === 404) { toast("Tâche introuvable : la liste va être actualisée.", "error"); loadTasks({ silent: true }); }
     else { button.disabled = false; toast("Une erreur est survenue. Réessayez.", "error"); }
   }
 }
@@ -237,11 +244,10 @@ async function confirmDelete() {
   if (!task) return;
   try {
     await removeTask(task.id);
-    state.tasks = state.tasks.filter((t) => t.id !== task.id);
-    render();
+    await loadTasks({ silent: true });
     toast("Tâche supprimée", "success");
   } catch (err) {
-    if (err.status === 404) { toast("Tâche introuvable : elle a peut-être déjà été supprimée.", "error"); loadTasks(); }
+    if (err.status === 404) { toast("Tâche introuvable : elle a peut-être déjà été supprimée.", "error"); loadTasks({ silent: true }); }
     else toast("Impossible de supprimer la tâche.", "error");
   } finally {
     state.taskToDelete = null;
@@ -259,7 +265,7 @@ function initEvents() {
       document.querySelectorAll(".filter").forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
       state.filter = btn.dataset.filter;
-      render();
+      loadTasks();                                 // US-07 : nouvel appel GET /tasks?status=...
     });
   });
 
