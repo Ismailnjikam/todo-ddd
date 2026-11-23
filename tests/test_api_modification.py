@@ -1,4 +1,4 @@
-"""Tests des routes PUT, PATCH et DELETE /tasks/{id} (M8)."""
+"""Tests des routes PUT, PATCH /done et DELETE /tasks/{id} (M8)."""
 
 import pytest
 from fastapi import FastAPI
@@ -6,28 +6,35 @@ from fastapi.testclient import TestClient
 
 from app.api.routes import get_task_service, router
 from app.domain.priority import Priority
-from app.domain.status import TaskError
+from app.domain.status import TaskError, TaskStatus
 from app.domain.task import Task
 
 AUTRE_PRIORITE = next(p for p in Priority if p is not Priority.MEDIUM)
 
 
 class FakeTaskService:
-    """Faux service en mémoire, utilisé à la place de celui de Melvina."""
-
     def __init__(self):
         self.tasks = {1: Task(id=1, title="Faire les courses")}
 
-    def update(self, task_id, **fields):
-        task = self.tasks.get(task_id)
-        if task is None:
-            return None
-        task.update(**fields)  # le domaine valide et lève TaskError
+    def _get(self, task_id):
+        if task_id not in self.tasks:
+            raise LookupError("Tâche introuvable.")
+        return self.tasks[task_id]
+
+    def update(self, task_id, title, description, priority):
+        task = self._get(task_id)
+        task.update(title=title, description=description,
+                    priority=priority)
         return task
 
-    def delete(self, task_id):
-        return self.tasks.pop(task_id, None) is not None
+    def remove(self, task_id):
+        self._get(task_id)
+        del self.tasks[task_id]
 
+    def complete(self, task_id):
+        task = self._get(task_id)
+        task.mark_done()
+        return task
 
 @pytest.fixture
 def service():
@@ -82,37 +89,21 @@ def test_put_erreur_metier_renvoie_422(client, service):
     assert "Règle métier" in response.json()["detail"]
 
 
-# ---------- PATCH ----------
+# ---------- PATCH /done ----------
 
-def test_patch_modifie_seulement_le_champ_envoye(client):
-    response = client.patch("/tasks/1", json={"description": "Détail"})
+def test_done_renvoie_200(client):
+    response = client.patch("/tasks/1/done")
     assert response.status_code == 200
-    body = response.json()
-    assert body["description"] == "Détail"
-    assert body["title"] == "Faire les courses"  # inchangé
+    assert response.json()["status"] == TaskStatus.DONE.value
 
 
-def test_patch_priorite(client):
-    response = client.patch(
-        "/tasks/1", json={"priority": AUTRE_PRIORITE.value}
-    )
-    assert response.status_code == 200
-    assert response.json()["priority"] == AUTRE_PRIORITE.value
+def test_done_deja_terminee_renvoie_409(client):
+    client.patch("/tasks/1/done")
+    assert client.patch("/tasks/1/done").status_code == 409
 
 
-def test_patch_tache_introuvable_renvoie_404(client):
-    response = client.patch("/tasks/999", json={"title": "x"})
-    assert response.status_code == 404
-
-
-def test_patch_titre_vide_renvoie_422(client):
-    response = client.patch("/tasks/1", json={"title": "  "})
-    assert response.status_code == 422
-
-
-def test_patch_priorite_inconnue_renvoie_422(client):
-    response = client.patch("/tasks/1", json={"priority": "inexistante"})
-    assert response.status_code == 422
+def test_done_introuvable_renvoie_404(client):
+    assert client.patch("/tasks/999/done").status_code == 404
 
 
 # ---------- DELETE ----------
