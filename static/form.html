@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gestion des tâches | To-Do List</title>
+
+    <link rel="stylesheet" href="css/form.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header class="navbar">
+        <div class="navbar__inner">
+
+            <a href="index.html" class="brand">
+                <span class="brand__logo">✓</span>
+                <span>To-Do List</span>
+            </a>
+
+            <a href="index.html" class="btn btn--ghost">
+                ← Accueil
+            </a>
+
+        </div>
+    </header>
+
+
+    <!-- Formulaire -->
+    <main class="form-section">
+
+        <div class="form-header">
+            <h1>Organisez vos tâches</h1>
+            <p>Ajoutez une nouvelle tâche ou modifiez une tâche existante.</p>
+        </div>
+
+        <section class="form-card">
+
+            <form id="task-form">
+
+                <!-- Titre -->
+                <div class="form-group">
+                    <label for="title">Titre de la tâche *</label>
+
+                    <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        placeholder="Exemple : Préparer mon exposé"
+                        maxlength="100"
+                        required
+                    >
+                </div>
+
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description">Description</label>
+
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Décrivez votre tâche..."
+                    ></textarea>
+                </div>
+
+
+                <!-- Priorité -->
+                <div class="form-group">
+                    <label for="priority">Niveau de priorité</label>
+
+                    <select id="priority" name="priority">
+
+                        <option value="basse">
+                            Basse
+                        </option>
+
+                        <option value="moyenne" selected>
+                            Moyenne
+                        </option>
+
+                        <option value="élevée">
+                            Élevée
+                        </option>
+
+                    </select>
+                </div>
+
+
+                <!-- Message de retour -->
+                <p
+                    id="form-message"
+                    class="form-message"
+                    aria-live="polite"
+                ></p>
+
+
+                <!-- Actions -->
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        id="submit-button"
+                        class="btn btn--primary"
+                    >
+                        Créer la tâche
+                    </button>
+
+                    <a
+                        href="index.html"
+                        class="btn btn--ghost"
+                    >
+                        Annuler
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+
+    <!-- Pied de page -->
+    <footer class="footer">
+        <p>To-Do List — Organisez votre quotidien simplement.</p>
+    </footer>
+
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/form.js"></script>
+
+</body>
+</html>
