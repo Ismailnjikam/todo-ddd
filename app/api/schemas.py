@@ -34,17 +34,3 @@ class TaskOutput(BaseModel):
     priority: Priority
     status: TaskStatus
     created_at: datetime
-
-class TaskUpdate(BaseModel):
-    """Données envoyées pour modifier partiellement une Tâche (PATCH)."""
-
-    title: str | None = Field(None, min_length=1, max_length=100)
-    description: str | None = None
-    priority: Priority | None = None
-
-    @field_validator("title")
-    @classmethod
-    def titre_non_vide(cls, value: str | None) -> str | None:
-        if value is not None and not value.strip():
-            raise ValueError("Le titre est obligatoire.")
-        return value
