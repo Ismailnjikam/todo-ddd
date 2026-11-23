@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>todo-ddd | Gestion simple de vos tâches</title>
+  <link rel="stylesheet" href="css/style.css">   <!-- M10 -->
+  <link rel="stylesheet" href="css/accueil.css"> <!-- M12 -->
+</head>
+<body>
+
+  <!-- A. Navigation -->
+  <header class="navbar">
+    <div class="container navbar__inner">
+      <a href="index.html" class="brand">
+        <span class="brand__logo" aria-hidden="true">✓</span> todo-ddd
+      </a>
+      <nav class="navbar__links" aria-label="Navigation principale">
+        <a href="index.html" class="active">Accueil</a>
+        <a href="#taches">Mes tâches</a>
+      </nav>
+      <div class="navbar__right">
+        <button class="icon-btn" aria-label="Notifications">🔔</button>
+        <span class="avatar" aria-label="Profil utilisateur">DI</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- B. Hero -->
+    <section class="hero">
+      <div class="container hero__inner">
+        <div class="hero__text">
+          <h1>Organisez vos tâches. <span>Atteignez vos objectifs.</span></h1>
+          <p>Gérez vos activités quotidiennes, suivez votre progression et restez organisé grâce à todo-ddd.</p>
+          <a href="#taches" class="btn btn--primary btn--lg">Voir mes tâches</a>
+        </div>
+        <div class="hero__art" aria-hidden="true">
+          <svg viewBox="0 0 400 300" role="img">
+            <circle cx="320" cy="60" r="40" fill="#dbeafe"/>
+            <circle cx="60" cy="240" r="30" fill="#bfdbfe"/>
+            <rect x="90" y="40" width="220" height="200" rx="18" fill="#fff" stroke="#bfdbfe" stroke-width="3"/>
+            <rect x="115" y="70" width="22" height="22" rx="6" fill="#2563eb"/>
+            <path d="M120 81l5 5 8-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <rect x="150" y="75" width="130" height="12" rx="6" fill="#bfdbfe"/>
+            <rect x="115" y="110" width="22" height="22" rx="6" fill="#2563eb"/>
+            <path d="M120 121l5 5 8-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <rect x="150" y="115" width="100" height="12" rx="6" fill="#bfdbfe"/>
+            <rect x="115" y="150" width="22" height="22" rx="6" fill="#fff" stroke="#2563eb" stroke-width="3"/>
+            <rect x="150" y="155" width="115" height="12" rx="6" fill="#dbeafe"/>
+            <rect x="115" y="190" width="22" height="22" rx="6" fill="#fff" stroke="#2563eb" stroke-width="3"/>
+            <rect x="150" y="195" width="80" height="12" rx="6" fill="#dbeafe"/>
+            <!-- Personnage -->
+            <circle cx="330" cy="150" r="22" fill="#fbbf77"/>
+            <path d="M300 270v-70a30 30 0 0 1 60 0v70z" fill="#2563eb"/>
+            <path d="M305 215l-40-25" stroke="#2563eb" stroke-width="14" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <!-- C. Statistiques -->
+      <section class="stats" aria-label="Statistiques">
+        <article class="stat stat--total">
+          <span class="stat__icon" aria-hidden="true">📋</span>
+          <div><p class="stat__label">Total des tâches</p><p class="stat__value" id="stat-total">–</p></div>
+        </article>
+        <article class="stat stat--todo">
+          <span class="stat__icon" aria-hidden="true">⏳</span>
+          <div><p class="stat__label">Tâches à faire</p><p class="stat__value" id="stat-todo">–</p></div>
+        </article>
+        <article class="stat stat--done">
+          <span class="stat__icon" aria-hidden="true">✅</span>
+          <div><p class="stat__label">Tâches terminées</p><p class="stat__value" id="stat-done">–</p></div>
+        </article>
+      </section>
+
+      <!-- D. Mes tâches -->
+      <section class="tasks" id="taches" aria-labelledby="tasks-title">
+        <div class="tasks__header">
+          <h2 id="tasks-title">Mes tâches</h2>
+          <!-- Lien vers le formulaire de M11 (modifiable dans liste.js : NEW_TASK_URL) -->
+          <a href="#" id="btn-new-task" class="btn btn--primary">+ Nouvelle tâche</a>
+        </div>
+
+        <div class="toolbar">
+          <input type="search" id="search" class="search" placeholder="Rechercher une tâche…" aria-label="Rechercher une tâche">
+          <div class="filters" role="group" aria-label="Filtrer les tâches">
+            <button class="filter is-active" data-filter="all">Toutes</button>
+            <button class="filter" data-filter="todo">À faire</button>
+            <button class="filter" data-filter="done">Terminées</button>
+          </div>
+        </div>
+
+        <!-- G. Zone d'état (chargement, vide, erreur…) -->
+        <div id="state" class="state" hidden></div>
+
+        <!-- E. Cartes -->
+        <div id="task-list" class="task-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- H. Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <a href="index.html" class="brand"><span class="brand__logo" aria-hidden="true">✓</span> todo-ddd</a>
+        <p>Gestion simple de vos tâches</p>
+      </div>
+      <p class="footer__copy">© 2026 todo-ddd </p>
+    </div>
+  </footer>
+
+  <!-- F. Modale de suppression -->
+  <dialog id="confirm-modal" class="modal" aria-labelledby="modal-title">
+    <h3 id="modal-title">Voulez-vous vraiment supprimer cette tâche ?</h3>
+    <p>Cette action est irréversible.</p>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="modal-cancel">Annuler</button>
+      <button class="btn btn--danger" id="modal-confirm">Confirmer la suppression</button>
+    </div>
+  </dialog>
+
+  <!-- Notifications -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <!-- À ajouter quand M11 aura poussé ses fichiers : api.js puis form.js -->
+  <script src="js/list.js"></script>
+</body>
+</html>
