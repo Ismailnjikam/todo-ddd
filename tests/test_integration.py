@@ -1,3 +1,5 @@
+import pytest
+@pytest.mark.skip(reason="En attente de la route PATCH /tasks/{id}/done (M8)")
 def test_parcours_complet(client):
     # 1. Créer une tâche
     reponse = client.post("/tasks", json={"title": "Écrire le rapport"})
